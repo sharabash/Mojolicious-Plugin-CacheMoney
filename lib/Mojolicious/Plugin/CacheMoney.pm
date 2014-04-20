@@ -8,7 +8,6 @@ sub register {
     $opts->{ '-chi' } //= {
         driver => 'Memcached::Fast'
         , servers => [ "127.0.0.1:11211" ]
-        , compress_threshold => 16 * 1024
         , namespace => decamelize( ref $app ) .':'. $app->mode
         , serializer => { serializer => 'JSON::XS', compress => 1 }
     };
@@ -48,6 +47,7 @@ sub register {
         }
 
         $code = ref $set && ref $set eq 'CODE' ? $set : sub { $set };
+        return $code->() if $args{expires_at} and $args{expires_at} < time; # a hack, necessity is the mother of invention
         return $self->chi->compute( $key, ( %args ? \%args : undef ), $code );
     } );
 
